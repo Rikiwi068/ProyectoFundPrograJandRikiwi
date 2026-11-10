@@ -33,12 +33,18 @@ typedef struct {
 int Calculo_Dano(int def, int ata);
 void Combate(int Vida);
 //Módulo 1: Lectura de datos en archivos y configuración
-void cargarConfiguracion(EstadoJuego *config, FILE *arch_c);
-void cargarBestiario(Enemigos bestiario[], int *total_enemigos, FILE *arch_m);
-void cargarObjetos(Objetos catalogo[], int *total_objetos, FILE *arch_o);
+void cargarConfiguracion(EstadoJuego *estado);
+void cargarBestiario(Enemigos bestiario[], int *total_enemigos);
+void cargarObjetos(Objetos catalogo[], int *total_objetos);
 //Módulo 2: Navegación y Exploración
 void avanzarCuarto(EstadoJuego *estado, Enemigos bestiario[], int total_enemigos, Objetos catalogo[], int total_objetos);
 Enemigos seleccionarEnemigo(Enemigos bestiario[], int total_enemigos, int es_cuarto_final);
+// Módulo 3: Sistema de Combate y Progresión
+void iniciarCombate(EstadoJuego *estado, Enemigos *enemigo);
+int calcularDano(int ataque_atacante, int defensa_defensor);
+void otorgarRecompensa(EstadoJuego *estado, Objetos catalogo[], int
+total_objetos, char tipo_enemigo[]);
+void verificarSubidaNivel(EstadoJuego *estado);
 
 int main(){
   //VARIABLES
@@ -50,16 +56,12 @@ int main(){
     FILE *in_obje, *in_config, *in_enem;
     Jugador.XP = 0;
     
-
+    
     
 
-    in_enem = fopen("bestiario.txt", "r");
-    in_obje = fopen("objetos.txt", "r");
-    in_config = fopen("config.txt", "r");
-
-    cargarBestiario(Enemies_v, &enemigos_t, in_enem);
-    cargarConfiguracion(&Estado_l, in_config);
-    cargarObjetos(Objects_v, &objetos_t, in_obje);
+    cargarBestiario(Enemies_v, &enemigos_t);
+    cargarConfiguracion(&Estado_l);
+    cargarObjetos(Objects_v, &objetos_t);
     
     srand(Estado_l.semilla);
 
@@ -83,50 +85,60 @@ int main(){
 
     for(i=0; i<5; i++) {
         printf("\n%d\n", Estado_l.pisos);
-    }
-
-
+    } 
     
-    fclose(in_obje);
-    fclose(in_config);
-    fclose(in_enem);
     return 0;
 }
 
-void cargarBestiario(Enemigos bestiario[], int *total_enemigos, FILE *arch_m) {
+void cargarBestiario(Enemigos bestiario[], int *total_enemigos) {
     int i;
+    FILE *in_enem;
 
+    in_enem = fopen("bestiario.txt", "r");
     for(i=0; i<*total_enemigos; i++){
-        fscanf(arch_m, "%d %s %d %d %d %s", &bestiario[i].ID, bestiario[i].nombre, &bestiario[i].vida, &bestiario[i].dano, &bestiario[i].defensa, bestiario[i].tipo);   
+        fscanf(in_enem, "%d %s %d %d %d %s", &bestiario[i].ID, bestiario[i].nombre, &bestiario[i].vida, &bestiario[i].dano, &bestiario[i].defensa, bestiario[i].tipo);   
     }    
+    fclose(in_enem);
+}
+
+void cargarConfiguracion(EstadoJuego *estado) {
+    FILE *in_config;
     
+    in_config = fopen("config.txt", "r");
+    fscanf(in_config, "%d %d %d %d %d %d %d", &(*estado).semilla, &(*estado).pisos, &(*estado).cuartos_base, &(*estado).HP_base, &(*estado).atck_base, &(*estado).def_base, &(*estado).n_mochila);   
+    fclose(in_config);  
 }
 
-void cargarConfiguracion(EstadoJuego *config, FILE *arch_c) {
-        
-    fscanf(arch_c, "%d %d %d %d %d %d %d", &(config->semilla), &(config->pisos), &(config->cuartos_base), &(config->HP_base), &(config->atck_base), &(config->def_base), &(config->n_mochila));   
-      
-}
-
-void cargarObjetos(Objetos catalogo[], int *total_objetos, FILE *arch_o) {
+void cargarObjetos(Objetos catalogo[], int *total_objetos) {
     int i;
+    FILE *in_obje;
 
+    in_obje = fopen("objetos.txt", "r");
     for(i=0; i<*total_objetos; i++){
-        fscanf(arch_o, "%d %s %d %s", &catalogo[i].ID, catalogo[i].nombre, &catalogo[i].valor, catalogo[i].efecto);   
+        fscanf(in_obje, "%d %s %d %s", &catalogo[i].ID, catalogo[i].nombre, &catalogo[i].valor, catalogo[i].efecto);   
     }
-
+    fclose(in_obje);
 }
 
 Enemigos seleccionarEnemigo(Enemigos bestiario[], int total_enemigos, int es_cuarto_final){
+    int resultado_dado;
+    
     if(es_cuarto_final==0){
-        int resultado_dado = (rand() % total_enemigos);
+        do {
+            resultado_dado = (rand() % total_enemigos);
+        } while(strcmp(bestiario[resultado_dado].nombre, "comun" != 0));
+        return bestiario[resultado_dado];
+    } else{
+        do {
+            resultado_dado = (rand() % total_enemigos);
+        } while(strcmp(bestiario[resultado_dado].nombre, "raro" != 0));
         return bestiario[resultado_dado];
     }
 }
 
-int Calculo_Dano(int def, int ata){
+int Calculo_Dano(int ataque_atacante, int defensa_defensor){
     int damage;
-    damage = ata - def;
+    damage = ataque_atacante - defensa_defensor;
     if(damage<1){
         damage = 1;
     }
