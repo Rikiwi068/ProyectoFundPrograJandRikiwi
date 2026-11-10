@@ -132,12 +132,12 @@ Enemigos seleccionarEnemigo(Enemigos bestiario[], int total_enemigos, int es_cua
     if(es_cuarto_final==0){
         do {
             resultado_dado = (rand() % total_enemigos);
-        } while(strcmp(bestiario[resultado_dado].tipo, "comun" != 0));
+        } while(strcmp(bestiario[resultado_dado].tipo, "comun") != 0);
         return bestiario[resultado_dado];
     } else{
         do {
             resultado_dado = (rand() % total_enemigos);
-        } while(strcmp(bestiario[resultado_dado].tipo, "raro" != 0));
+        } while(strcmp(bestiario[resultado_dado].tipo, "raro") != 0);
         return bestiario[resultado_dado];
     }
 }
