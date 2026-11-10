@@ -7,7 +7,7 @@
 typedef char string[100];
 
 typedef struct {
-    string nombre;
+    
     int HP, ataque, defensa, XP;
 }Atributos;
 
@@ -26,7 +26,8 @@ typedef struct {
 } Objetos ;
 
 typedef struct {
-    int semilla, pisos, cuartos_base, HP_base, atck_base, def_base, n_mochila; 
+    int semilla, pisos, cuartos_base, HP_base, atck_base, def_base, n_mochila, HP, ataque, defensa, XP; 
+    string nombre;
 } EstadoJuego;
 
 //ACIONES NOMINADAS
@@ -42,9 +43,14 @@ Enemigos seleccionarEnemigo(Enemigos bestiario[], int total_enemigos, int es_cua
 // Módulo 3: Sistema de Combate y Progresión
 void iniciarCombate(EstadoJuego *estado, Enemigos *enemigo);
 int calcularDano(int ataque_atacante, int defensa_defensor);
-void otorgarRecompensa(EstadoJuego *estado, Objetos catalogo[], int
-total_objetos, char tipo_enemigo[]);
+void otorgarRecompensa(EstadoJuego *estado, Objetos catalogo[], int total_objetos, char tipo_enemigo[]);
 void verificarSubidaNivel(EstadoJuego *estado);
+// Módulo 4: Gestión de Recursos
+void usarObjeto(EstadoJuego *estado);
+// Módulo 5: Persistencia y Output (Highscore)
+void guardarPartida(EstadoJuego estado);
+int cargarPartida(EstadoJuego *estado);
+void registrarHighscore(EstadoJuego estado, bool victoria);
 
 int main(){
   //VARIABLES
@@ -126,12 +132,12 @@ Enemigos seleccionarEnemigo(Enemigos bestiario[], int total_enemigos, int es_cua
     if(es_cuarto_final==0){
         do {
             resultado_dado = (rand() % total_enemigos);
-        } while(strcmp(bestiario[resultado_dado].nombre, "comun" != 0));
+        } while(strcmp(bestiario[resultado_dado].tipo, "comun" != 0));
         return bestiario[resultado_dado];
     } else{
         do {
             resultado_dado = (rand() % total_enemigos);
-        } while(strcmp(bestiario[resultado_dado].nombre, "raro" != 0));
+        } while(strcmp(bestiario[resultado_dado].tipo, "raro" != 0));
         return bestiario[resultado_dado];
     }
 }
@@ -143,4 +149,13 @@ int Calculo_Dano(int ataque_atacante, int defensa_defensor){
         damage = 1;
     }
     return damage;
+}
+
+void guardarPartida(EstadoJuego estado){
+    FILE *save_state;
+
+    save_state = fopen("partida_guardada.txt", "w");
+    
+
+
 }
