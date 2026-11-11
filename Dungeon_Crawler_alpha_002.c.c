@@ -60,13 +60,14 @@ void registrarHighscore(EstadoJuego estado, T_bool victoria);
 //Módulo 6: acciones adicionales
 void esperar_segundos(int segundos);
 void MostrarHighscores();
+void Pelea_final(EstadoJuego *estado);
 
 int main(){
   //VARIABLES
     EstadoJuego Estado_l;
-    Entidad Enemies_v[100], Enemie_a; 
+    Entidad Enemies_v[100]; 
     Objetos Objects_v[100];
-    int  i, opcion_ini, opcion_fue = 0, opcion_com, Estado_juego = 0, tot_enemigos , tot_objetos, cargado_exitoso = 1;
+    int  i, opcion_in, opcion_fue = 0, Estado_juego = 0, tot_enemigos , tot_objetos, cargado_exitoso = 1;
     T_bool juego_activo=V;
 
     cargarBestiario(Enemies_v, &tot_enemigos);
@@ -112,13 +113,20 @@ int main(){
                 Estado_l.jugador.XP = 0;
                 Estado_l.items_en_mochila = 0;
                 Estado_l.jugador.nivel = 1;
+                printf("\n========================================================================================\n");
+                printf("\n                         TU AVENTURA HA COMENZADO \n");
+                printf("\n========================================================================================\n");
             break;
             case 2:
                 cargado_exitoso = cargarPartida(&Estado_l);
                 if(cargado_exitoso == 0){
                     printf("No existe ninguna partida cargada");
+                    opcion_fue = 0;
+                } else {
+                    printf("\n========================================================================================\n");
+                    printf("\n                           TU AVENTURA CONTNUA \n");
+                    printf("\n========================================================================================\n");
                 }
-                opcion_fue = 0;
             break;
             case 3:
                 MostrarHighscores();
@@ -135,7 +143,23 @@ int main(){
     
 
     while(juego_activo == V){
+        printf("\n========================================================================================\n");
+        printf("Estas en una mazmorra con multiples cuartos e incertidumbre por delante, ¿Qué deseas hacer?\n");
+        printf("\n========================================================================================\n");
+        printf("\nIr al siguiente cuarto(1) | Revisar la mochila(2) | Guardar y salir(3)\n");
+        printf("\n========================================================================================\n");
+        scanf("%d", opcion_in);
+        switch (opcion_in) {
+            case 1:
+                avanzarCuarto(&Estado_l, Enemies_v, tot_enemigos, Objects_v, tot_objetos);
+            break;
+            case 2:
+            break;
+            case 3:
+            break;
+            default:
 
+        }
     }
 
 
@@ -171,7 +195,7 @@ void cargarConfiguracion(EstadoJuego *config) {
         return;
     }
         
-    fscanf(arch_c, "%d %d %d %d %d %d %d", &((*config).semilla), &((*config).pisos), &((*config).cuartos_base), &((*config).HP_base), &((*config).atck_base), &((*config).def_base), &((*config).n_mochila));   
+    fscanf(arch_c, "%d %d %d %d %d %d %d", &((*config).semilla), &((*config).pisos_base), &((*config).cuartos_base), &((*config).HP_base), &((*config).atck_base), &((*config).def_base), &((*config).n_mochila));   
     fclose(arch_c);
 }
 
@@ -282,6 +306,54 @@ void usarObjeto(EstadoJuego *estado){
     }
 }
 
+void esperar_segundos(int segundos){
+    clock_t inicio=clock(), milisegundos=segundos*1000;
+
+    while((clock()-inicio)*1000/CLOCKS_PER_SEC<milisegundos){
+
+    }
+}
+
+void registrarHighscore(EstadoJuego estado, T_bool victoria){
+    char nombre_jugador[50];
+    int puntaje_final=estado.jugador.XP, bonus=rand()%60, penalización=rand()%50;
+
+    printf("\n=========================\n");
+
+    if(victoria==V){
+        puntaje_final=puntaje_final+bonus;
+        printf("Considérate maestro de la mazmorra, pues tus hazañas han demostrado ser insuperables a lo largo de tu travesía\n");
+    }else{
+        int base_derrota=estado.pisos_base/4;
+        puntaje_final=(base_derrota+bonus-penalización);
+        printf("Mientras tus ojos se cierran, la mazmorra reclama tu alma para retorcerla y usarla contra cualquier nuevo intruso que decida desafiarla\n");
+    }
+
+    printf("tu puntuación fue: %d\n", puntaje_final);
+
+    printf("ingresa el nombre de tu insensato aventurero\n");
+    scanf("%s",nombre_jugador);
+    printf("\ncargando pantalla final\n");
+
+    esperar_segundos(3);
+
+    printf("\nResumen de la aventura\n");
+    printf("piso máximo alcanzado %d/%d\n", estado.piso_maximo, estado.pisos_base);
+    printf("cuartos explorados %d\n", estado.cuartos_explorados);
+    printf("enemigos derrotados %d\n", estado.enemigos_derrotados);
+    printf("objetos consumidos %d\n", estado.objetos_consumidos);
+    printf("Atributos finales: HP %d | Ataque %d | Defensa %d | XP %d \n", estado.jugador.HP, estado.jugador.ataque, estado.jugador.defensa, estado.jugador.XP);
+
+    FILE *arch_h=fopen("highscore.txt","a");
+    if(arch_h==NULL){
+        printf("Error al abrir el archivo highscore, verifique la existencia y el formato del nisno y vuelva a intentarlo\n");
+        return;
+    }
+
+    fprintf(arch_h,"%s %d %d %d %d %d %s\n", nombre_jugador, puntaje_final, estado.piso_maximo, estado.cuartos_explorados, estado.enemigos_derrotados, estado.objetos_consumidos, (victoria==V)? "Victoria":"Derrota");
+    fclose(arch_h);
+}
+
 void iniciarCombate(EstadoJuego *estado, Entidad *enemigo){
     int opcion_com;
     T_bool combate_activo=V;
@@ -315,18 +387,23 @@ void iniciarCombate(EstadoJuego *estado, Entidad *enemigo){
                 break;
             }
             case 3:{
-                int prob_escape=((*estado).jugador.defensa*100)/((*estado).jugador.defensa+(*enemigo).dano),dado=rand()%100;
+                if(strcmp((*enemigo).tipo, "Boss")==1){
+                    int prob_escape=((*estado).jugador.defensa*100)/((*estado).jugador.defensa+(*enemigo).dano),dado=rand()%100;
 
-                printf("Intentas huir del enemigo...\n");
-                if (dado<prob_escape){
-                    printf("Has escapado\n");
-                    combate_activo=F;
-                }else{
-                    printf("Fallas al intentar escapar, y quedas expuesto al atque enemigo\n");
-                    turno_consumido=V;
-                }
-                break;
-            }   
+                    printf("Intentas huir del enemigo...\n");
+                    if (dado<prob_escape){
+                        printf("Has escapado\n");
+                        combate_activo=F;
+                    }else{
+                        printf("Fallas al intentar escapar, y quedas expuesto al atque enemigo\n");
+                        turno_consumido=V;
+                    }
+                    break;
+                } else {
+                    printf("\nLa risa de Sir Violeta hace retumbar las paredes, no podrás huir de esta pelea, las espadas moradas incrustadas a tu alrededor bloquean tu salida\n");
+                }  
+            
+            }
             default: 
                 printf("Valor invalido, intente de nuevo\n");
                 break;
@@ -389,81 +466,63 @@ void otorgarRecompensa(EstadoJuego *estado, Objetos catalogo[], int total_objeto
         (*estado).mochila[(*estado).items_en_mochila]=item_encontrado;
         (*estado).items_en_mochila++;
 
-        printf("\nHas encontrado '%s'! (Efecto: %s | Valor: %d\n", item_encontrado.nombre, item_encontrado.efecto, item_encontrado.valor);
+        printf("\nHas encontrado '%s'! Efecto: %s | Valor: %d\n", item_encontrado.nombre, item_encontrado.efecto, item_encontrado.valor);
     }
     
 }
 
-void esperar_segundos(int segundos){
-    clock_t inicio=clock(), milisegundos=segundos*1000;
+void verificarSubidaNivel(EstadoJuego *estado){
+    int xp_por_nv=100;
 
-    while((clock()-inicio)*1000/CLOCKS_PER_SEC<milisegundos){
+    while((*estado).jugador.XP>=xp_por_nv){
+        (*estado).jugador.XP-=xp_por_nv;
 
+        (*estado).jugador.nivel++;
+        (*estado).HP_base+=20;
+        (*estado).jugador.HP=(*estado).HP_base;
+        (*estado).jugador.defensa+=10;
+        (*estado).jugador.ataque+=5;
+
+        printf("\n=================================Has subido de nivel====================================\n");
+        printf("                            Hp: %d, Def: %d, Atk: %d, NVL: %d\n", (*estado).jugador.HP,(*estado).jugador.defensa,(*estado).jugador.ataque), (*estado).jugador.nivel;
+        printf("\n========================================================================================\n");
     }
 }
 
-void registrarHighscore(EstadoJuego estado, T_bool victoria){
-    char nombre_jugador[50];
-    int puntaje_final=estado.jugador.XP, bonus=rand()%60, penalización=rand()%50;
-
-    printf("\n=========================\n");
-
-    if(victoria==V){
-        puntaje_final=puntaje_final+bonus;
-        printf("Considérate maestro de la mazmorra, pues tus hazañas han demostrado ser insuperables a lo largo de tu travesía\n");
-    }else{
-        int base_derrota=estado.pisos/4;
-        puntaje_final=(base_derrota+bonus-penalización);
-        printf("Mientras tus ojos se cierran, la mazmorra reclama tu alma para retorcerla y usarla contra cualquier nuevo intruso que decida desafiarla\n");
+void Pelea_final(EstadoJuego *estado){
+    Entidad Jefe = {0, 200, 300, 67, "Sir Violeta", "Boss"};
+    iniciarCombate(&estado, &Jefe);
+    if((*estado).jugador.HP <= 0){
+        printf("\nEl vigor del veterano morado es mayor que tu voluntad, has sido derrotado...\ny contigo, se van todas las esperanzas de salvar al mundo de Sir Violeta\n");
+    } else {
+        printf("\nRecorres el último cuarto de la mazmorra mientras el ambiente, antes lleno de criaturas hostiles y monstruosas, vuelve a su fin, tu alma se siente en paz mientras te adentras en las cavernas que yacen bajo este calabozo infernal\n");
+        printf("Has derrotado a Sir Violeta y puedes sentir el porvenir de un Mundo de paz sin ese manto violeta cubriendo su hermosa luz...\n");
     }
-
-    printf("tu puntuación fue: %d\n", puntaje_final);
-
-    printf("ingresa el nombre de tu insensato aventurero\n");
-    scanf("%s",nombre_jugador);
-    printf("\ncargando pantalla final\n");
-
-    esperar_segundos(3);
-
-    printf("\nResumen de la aventura\n");
-    printf("piso máximo alcanzado %d/%d\n", estado.piso_maximo, estado.pisos);
-    printf("cuartos explorados %d\n", estado.cuartos_explorados);
-    printf("enemigos derrotados %d\n", estado.enemigos_derrotados);
-    printf("objetos consumidos %d\n", estado.objetos_consumidos);
-    printf("Atributos finales: HP %d | Ataque %d | Defensa %d | XP %d \n", estado.jugador.HP, estado.jugador.ataque, estado.jugador.defensa, estado.jugador.XP);
-
-    FILE *arch_h=fopen("highscore.txt","a");
-    if(arch_h==NULL){
-        printf("Error al abrir el archivo highscore, verifique la existencia y el formato del nisno y vuelva a intentarlo\n");
-        return;
-    }
-
-    fprintf(arch_h,"%s %d %d %d %d %d %s\n", nombre_jugador, puntaje_final, estado.piso_maximo, estado.cuartos_explorados, estado.enemigos_derrotados, estado.objetos_consumidos, (victoria==V)? "Victoria":"Derrota");
-    fclose(arch_h);
 }
-
 
 void avanzarCuarto(EstadoJuego *estado, Entidad bestiario[], int total_enemigos, Objetos catalogo[], int total_objetos){
-    static int cuarto_actual = 0, piso_actual = 1;
-    int es_cuarto_final = 0;
+    int es_cuarto_final = 0, piso_actual = (*estado).piso_maximo, cuarto_actual = (*estado).cuartos_explorados;
 
-    cuarto_actual++;
-    (*estado).cuartos_explorados++;
-    (*estado).piso_maximo = piso_actual;
-
-    printf("\n====================================\n");
-    printf("\n          PISO%d  CUARTO%d/%d\n",piso_actual,cuarto_actual,(*estado).cuartos_base);
-    printf("\n====================================\n");
-
-    if(cuarto_actual==(*estado).cuartos_base){
+    if((cuarto_actual==(*estado).cuartos_base-1 && piso_actual == 1) || (cuarto_actual==(*estado).cuartos_base && piso_actual != 1 && piso_actual != (*estado).pisos_base)){
+        (*estado).cuartos_explorados = 1;
+        (*estado).piso_maximo++;
+        printf("Desciendes en un nuevo piso de la mazmorra oscura, húmeda y putrefacta\n");
+    }else if(piso_actual == (*estado).piso_maximo && (cuarto_actual == (*estado).cuartos_base)) {
+        (*estado).cuartos_explorados++;
         es_cuarto_final=1;
         printf("Has ingresado al último cuarto de este piso, prepárate para el desafío que se presenta frente a tus ojos\n");
-    }else{
-        printf("desciendes en un nuevo piso de la mazmorra oscura, húmeda y putrefacta\n");
+    } else {
+        (*estado).cuartos_explorados++;
+        printf("Avanzas por el piso hacia el próximo cuarto");
     }
+
+    printf("\n========================================================================================\n");
+    printf("\n                                PISO%d  CUARTO%d/%d\n",piso_actual,cuarto_actual,(*estado).cuartos_base);
+    printf("\n========================================================================================\n");
 
     Entidad enemigo_actual = seleccionarEnemigo(bestiario,total_enemigos,es_cuarto_final);
     printf("%s se muestra frente a ti\n", enemigo_actual.nombre);
+    if()
     iniciarCombate(estado, &enemigo_actual);
 
     if((*estado).jugador.HP<=0){
@@ -473,18 +532,13 @@ void avanzarCuarto(EstadoJuego *estado, Entidad bestiario[], int total_enemigos,
     if (enemigo_actual.vida<=0){
             printf("has derrotado a %s!\n", enemigo_actual.nombre);
             (*estado).enemigos_derrotados++;
-            otorgarRecompensa(estado, catalogo, total_objetos, enemigo_actual.tipo);
+            otorgarRecompensa(&estado, catalogo, total_objetos, enemigo_actual.tipo);
+            verificarSubidaNivel(&estado);
     }
 
     if(es_cuarto_final==1){
-        printf("La mazmorra vuelve a engullirte mientras desciendes nuevamente\n");
-        piso_actual++;
-        cuarto_actual=0;
-
-        if(piso_actual>(*estado).pisos){
-            printf("\nrecorres el último cuarto de la mazmorra mientras el ambiente, antes lleno de criaturas hostiles y monstruosas, vuelve a su fin, tu alma se siente en paz mientras te adentras en las cavernas que yacen bajo este calabozo infernal\n");
+            Pelea_final(&estado);
             registrarHighscore(*estado,1);
-        }
     }
 }
 
@@ -504,24 +558,6 @@ void MostrarHighscores(){
     }
 
     fclose(arch_h);
-}
-
-void verificarSubidaNivel(EstadoJuego *estado){
-    int xp_por_nv=100;
-
-    while((*estado).jugador.XP>=xp_por_nv){
-        (*estado).jugador.XP-=xp_por_nv;
-
-        (*estado).jugador.nivel++;
-        (*estado).HP_base+=20;
-        (*estado).jugador.HP=(*estado).HP_base;
-        (*estado).jugador.defensa+=10;
-        (*estado).jugador.ataque+=5;
-
-        printf("\n==========Has subido de nivel==========\n");
-        printf("Hp: %d, Def: %d, Atk: %d\n", (*estado).jugador.HP,(*estado).jugador.defensa,(*estado).jugador.ataque);
-        printf("\n=======================================\n");
-    }
 }
 
 void guardarPartida(EstadoJuego estado){
