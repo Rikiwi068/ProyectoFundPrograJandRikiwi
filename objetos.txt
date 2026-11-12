@@ -1,0 +1,5 @@
+1 Pocion_Vida 30 Cura_Vida
+2 Vino 50 Cura_Max
+3 Leche 20 Buff_Defensa
+4 Coco 30 Buff_Defensa
+5 Camaron 30 Buff_Dano
