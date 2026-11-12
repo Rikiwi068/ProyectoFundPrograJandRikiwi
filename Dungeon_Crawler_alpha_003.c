@@ -51,55 +51,55 @@ void iniciarCombate(EstadoJuego *estado, Entidad *enemigo);
 int calcularDano(int ataque_atacante, int defensa_defensor);
 void otorgarRecompensa(EstadoJuego *estado, Objetos catalogo[], int total_objetos, char tipo_enemigo[]);
 void verificarSubidaNivel(EstadoJuego *estado);
-//Módulo 4: gestión de recursos
+//Módulo 4: Gestión de recursos
 void usarObjeto(EstadoJuego *estado);
-//Módulo 5: guardado y carga de partida
+//Módulo 5: Guardado y carga de partida
 void guardarPartida(EstadoJuego estado);
 int cargarPartida(EstadoJuego *estado);
 void registrarHighscore(EstadoJuego estado, T_bool victoria);
-//Módulo 6: acciones adicionales
+//Módulo 6: Acciones adicionales implementadas
 void esperar_segundos(int segundos);
 void MostrarHighscores();
 void Pelea_final(EstadoJuego *estado);
+void BorrarPartidaGuardada();
 
 int main(){
   //VARIABLES
-    EstadoJuego Estado_l;
-    Entidad Enemies_v[100]; 
-    Objetos Objects_v[100];
-    int opcion_in, opcion_fue = 0, tot_enemigos , tot_objetos, cargado_exitoso = 1;
-    T_bool juego_activo=V;
+    EstadoJuego Estado_l; //Variable con los valores generales
+    Entidad Enemies_v[100]; // Vector con toda la base de datos de los enemigos
+    Objetos Objects_v[100]; // Vector con toda la base de datos de los objetos 
+    int opcion_in, opcion_fue = 0, tot_enemigos , tot_objetos, cargado_exitoso = 1; // Variables de opciones tomadas, numero de enemigos y objetos y variable para validar la lectura correcta del guardado
+    T_bool juego_activo=V; // Bandera para seguir en el juego o salir de él
 
-    cargarBestiario(Enemies_v, &tot_enemigos);
-    cargarObjetos(Objects_v, &tot_objetos);
-    cargarConfiguracion(&Estado_l);
+    cargarBestiario(Enemies_v, &tot_enemigos); //Procedimiento para llenar vector de enemigos desde el archivo
+    cargarObjetos(Objects_v, &tot_objetos); //Procedimiento para llenar vector de objetos desde el archivo
+    cargarConfiguracion(&Estado_l); //Lectura del archivo de configuracion
     
-    srand(Estado_l.semilla);
+    srand(Estado_l.semilla); //Inicialización de la semilla
 
-    if(tot_enemigos==0){
+    if(tot_enemigos==0){ // Validacion de que existan enemigos en el archivo
         printf("Error al cargar los enemigos");
         juego_activo = F;
     }
 
-    if(tot_objetos == 0){
+    if(tot_objetos == 0){ //Validaion de que existan objetos en el archivo
         printf("Error al cargar los objetos");
         juego_activo = F;
     }
 
-    //las instrucciones en el switch son provisionales y se encuentran de esa forma para evitar errores por ahora
+    //Menú al abrir juego para seleccionar opciones generales 
     while(opcion_fue != 1 && opcion_fue != 2 && opcion_fue != 4 && juego_activo == V){
         printf("\n========================================================================================\n");
         printf("\n                         BIENVENIDO A DUNGEON CRAWLER \n");
         printf("\n========================================================================================\n");
-
         printf("\n========================================================================================\n");
-        printf("Seleccione una accion\n");
+        printf("\nSeleccione una accion\n");
         printf("\n========================================================================================\n");
         printf("\nEmpezar Nueva partida(1) | Continuar Partida(2) | Highscores(3)| Salir(4)\n");
-        printf("\n========================================================================================\n");
+        printf("\n========================================================================================\n\n");
         scanf("%d", &opcion_fue);
         switch  (opcion_fue) {
-            case 1:
+            case 1: //Se le asigna el valor inicial a todos los atributos y a la ubicacion
                 Estado_l.piso_maximo = 1;
                 Estado_l.cuartos_explorados=0;
                 Estado_l.enemigos_derrotados = 0;
@@ -114,7 +114,7 @@ int main(){
                 printf("\n                         TU AVENTURA HA COMENZADO \n");
                 printf("\n========================================================================================\n");
             break;
-            case 2:
+            case 2: //Se lee la ubicacion y los atributos del archivo de guardado, y se valida que se cargue con éxito 
                 cargado_exitoso = cargarPartida(&Estado_l);
                 if(cargado_exitoso == 0){
                     printf("No existe ninguna partida cargada");
@@ -125,11 +125,13 @@ int main(){
                     printf("\n========================================================================================\n");
                 }
             break;
-            case 3:
+            case 3: //Muestra las ultimas 5 puntuaciones
                 MostrarHighscores();
             break;
-            case 4:
-                printf("Hasta luego :(");
+            case 4: //Sale del Juego
+                printf("\n========================================================================================\n");
+                printf("\nHasta luego :(\n");
+                printf("\n========================================================================================\n");
                 juego_activo = F;
             break;
             default:
@@ -137,28 +139,33 @@ int main(){
         }
     }
 
-    while(juego_activo == V){
+    while(juego_activo == V){ //Ciclo que controla el flujo una vez iniciado el juego
         printf("\n========================================================================================\n");
-        printf("Estas en una mazmorra con multiples cuartos e incertidumbre por delante, Que deseas hacer?\n");
+        printf("\nEstas en una mazmorra con multiples cuartos e incertidumbre por delante, Que deseas hacer?\n");
         printf("\n========================================================================================\n");
         printf("\nIr al siguiente cuarto(1) | Revisar la mochila(2) | Guardar y salir(3)\n");
-        printf("\n========================================================================================\n");
-        scanf("%d", &opcion_in);
+        printf("\n========================================================================================\n\n");
+        scanf("%d\n", &opcion_in);
         switch (opcion_in) {
-            case 1:
+            case 1: //Se llama al procedimiento para continuar en el juego y se valida que no termine
                 avanzarCuarto(&Estado_l, Enemies_v, tot_enemigos, Objects_v, tot_objetos);
-            if(Estado_l.jugador.HP<=0 || Estado_l.cuartos_explorados == Estado_l.cuartos_base+1 ){
-                juego_activo = F;
+            if(Estado_l.jugador.HP<=0){ // Sale del programa porque el jugador ha perdido
+                juego_activo = F; //Se cambia la bandera a F para salir del ciclo
+            } else if(Estado_l.cuartos_explorados == Estado_l.cuartos_base+1){ //Se valida si está en el cuarto final ya sabiendo que sobrevivió
+                if(opcion_fue==2){ //Si se selecciono la partida guardada se borra ya que se terminó el juego desde esta
+                    BorrarPartidaGuardada(); 
+                }
+                juego_activo = F; //Se cambia la bandera a F para salir del ciclo
             }
             break;
-            case 2:
+            case 2: //Se llama el procedimiento asociado a la gestion de objetos
                 usarObjeto(&Estado_l);
             break;
-            case 3:
+            case 3: //Se guardan los atributos y se cierra el programa
                 guardarPartida(Estado_l);
                 juego_activo = F;
             break;
-            default:
+            default: //si se ingresa cualquier otro valor que no es válido, simplemente se repite el ciclo
                 printf("\nPor favor, ingrese una opcion valida ;)\n");
         }
     }
@@ -166,17 +173,17 @@ int main(){
     return 0;
 }
 
-void cargarBestiario(Entidad bestiario[], int *total_enemigos) {
-    FILE *arch_m = fopen("bestiario.txt","r");
-    int i=0;
+void cargarBestiario(Entidad bestiario[], int *total_enemigos) { //Procedimiento para cargar la base de datos de los enemigos
+    FILE *arch_m = fopen("bestiario.txt","r"); 
+    int i=0; //Variable para contar la cantidad de enemigos
 
-    if(arch_m==NULL){
+    if(arch_m==NULL){ //Se valida si el archivo no este vacio
         printf("No se encontró el archivo del bestiario, verifique su existencia en su dispositivo o que el formato sea el adecuado e intente de nuevo");
         *total_enemigos=0;
         return;
     }
 
-    while(fscanf(arch_m,"%d %s %d %d %d %s", &bestiario[i].ID, bestiario[i].nombre, &bestiario[i].vida, &bestiario[i].dano, &bestiario[i].defensa, bestiario[i].tipo)!=EOF){
+    while(fscanf(arch_m,"%d %s %d %d %d %s", &bestiario[i].ID, bestiario[i].nombre, &bestiario[i].vida, &bestiario[i].dano, &bestiario[i].defensa, bestiario[i].tipo)!=EOF){ //Ciclo para leer los atributos de cada enemigo y se cuenta cuantos hay en total 
         i++;
     } 
 
@@ -186,29 +193,28 @@ void cargarBestiario(Entidad bestiario[], int *total_enemigos) {
     
 }
 
-void cargarConfiguracion(EstadoJuego *config) {
+void cargarConfiguracion(EstadoJuego *config) { //Procedimiento para cargar los valores base del archivo de configuracion
     FILE *arch_c = fopen("config.txt", "r");
 
-    if (arch_c==NULL){
+    if (arch_c==NULL){ //Se valida si el archivo no este vacio
         printf("No se encontró el archivo de configuración, verifique si el mismo se encuentra en su dispositivo y con el formato adecuado e intente de nuevo\n");
         return;
     }
         
-    fscanf(arch_c, "%d %d %d %d %d %d %d", &((*config).semilla), &((*config).pisos_base), &((*config).cuartos_base), &((*config).HP_base), &((*config).atck_base), &((*config).def_base), &((*config).n_mochila));   
+    fscanf(arch_c, "%d %d %d %d %d %d %d", &((*config).semilla), &((*config).pisos_base), &((*config).cuartos_base), &((*config).HP_base), &((*config).atck_base), &((*config).def_base), &((*config).n_mochila)); //se leen todos los valores del archivo
     fclose(arch_c);
 }
 
-void cargarObjetos(Objetos catalogo[], int *total_objetos) {
+void cargarObjetos(Objetos catalogo[], int *total_objetos) { //Procedimiento para cargar la base de datos de los enemigos
     FILE *arch_o = fopen("objetos.txt","r");
+    int i=0; //contador del total de objetos
 
-    if(arch_o==NULL){
+    if(arch_o==NULL){ //Se valida si el archivo no este vacio
         printf("El archivo de objetos no se encuentra o tiene un formato equivocado, verifique y vuelva a intentar");
         return;
     }
-    int i=0;
-
     
-    while(fscanf(arch_o, "%d %s %d %s", &catalogo[i].ID, catalogo[i].nombre, &catalogo[i].valor, catalogo[i].efecto)!=EOF){
+    while(fscanf(arch_o, "%d %s %d %s", &catalogo[i].ID, catalogo[i].nombre, &catalogo[i].valor, catalogo[i].efecto)!=EOF){ //Ciclo para leer los atributos de cada objeto y se cuenta cuantos hay en total 
         i++;
     }  
     
@@ -217,24 +223,24 @@ void cargarObjetos(Objetos catalogo[], int *total_objetos) {
     fclose(arch_o);
 }
 
-Entidad seleccionarEnemigo(Entidad bestiario[], int total_enemigos, int es_cuarto_final){
+Entidad seleccionarEnemigo(Entidad bestiario[], int total_enemigos, int es_cuarto_final){ //Funcion para seleccionar un enemigo para el combate
     int i, j;
     
-    if(es_cuarto_final == 0){
-        int resultado_dado = (rand() % total_enemigos);
+    if(es_cuarto_final == 0){ //Si no es el cuarto final
+        int resultado_dado = (rand() % total_enemigos); //Indice de enemigo aleatorio
         return bestiario[resultado_dado];
     } else {
         int cant_raras = 0;
-        for(j = 0; j < total_enemigos; j++){
+        for(j = 0; j < total_enemigos; j++){ //Contador de enemigos raros
             if(strcmp(bestiario[j].tipo, "raro") == 0){
                 cant_raras++;
             }
         }
-        if(cant_raras > 0){
+        if(cant_raras > 0){ // Valida que exista al menos uno raro
             int objetivo = rand() % cant_raras; 
             int contador_raras = 0;
 
-            for(i = 0; i < total_enemigos; i++){
+            for(i = 0; i < total_enemigos; i++){ //Se recorre todo el vector de enemigos para conseguir uno raro que 
                 if(strcmp(bestiario[i].tipo, "raro") == 0){
                     if(contador_raras == objetivo){
                         return bestiario[i];
@@ -247,66 +253,66 @@ Entidad seleccionarEnemigo(Entidad bestiario[], int total_enemigos, int es_cuart
     }
 }
 
-int calcularDano(int ataque_atacante, int defensa_defensor){
+int calcularDano(int ataque_atacante, int defensa_defensor){ //Funcion para calcular el daño inflingido
     int damage;
-    damage = ataque_atacante - defensa_defensor;
-    if(damage<1){
+    damage = ataque_atacante - defensa_defensor; 
+    if(damage<1){ //El daño mínimo es 1, por lo que se setea a 1 en caso de ser menor
         damage = 1;
     }
     return damage;
 }
 
-void usarObjeto(EstadoJuego *estado){
+void usarObjeto(EstadoJuego *estado){ //Procedimiento para Mostrar los objetos y usar el deseado especificamente
     int i, selección;
 
-    if((*estado).items_en_mochila<=0){
+    if((*estado).items_en_mochila<=0){ //Validando si tiene bobjetos en la mochila
         printf("Tu espalda esta ligera, tu mochila, vacia\n");
         return;
     }else{
-        printf("\n===mochila %d / %d===\n", (*estado).items_en_mochila, (*estado).n_mochila);
-        for(i=0;i<(*estado).items_en_mochila;i++){
+        printf("\n===mochila %d / %d===\n", (*estado).items_en_mochila, (*estado).n_mochila); //Imprimiendo las casillas ocupadas
+        for(i=0;i<(*estado).items_en_mochila;i++){ //Imprime todos los objetos en la mochila
             printf("\n%d %s (Valor: %d | Efecto: %s)\n", i+1, (*estado).mochila[i].nombre, (*estado).mochila[i].valor, (*estado).mochila[i].efecto);
         }
         
-        printf("Seleccione el objeto a usar o ingrese 0 para salir de la mochila\n");
+        printf("Seleccione el objeto a usar o ingrese 0 para salir de la mochila\n"); //Alternativa en caso de no querer usar objeto
         scanf("%d", &selección);
 
-        if(selección<=0 || selección>(*estado).items_en_mochila){
+        if(selección<=0 || selección>(*estado).items_en_mochila){ //Valida que sea un indice de la mochila
             return;
         }else{
             int indice=selección-1;
-            Objetos objeto_usado= (*estado).mochila[indice];
+            Objetos objeto_usado= (*estado).mochila[indice]; // se guarda el objeto seleccionado en una variable auxiliar
 
-            if(strcmp(objeto_usado.efecto, "Cura_Vida")==0){
-                (*estado).jugador.HP += objeto_usado.valor;
-                if((*estado).jugador.HP > (*estado).HP_base){
-                    (*estado).jugador.HP = (*estado).HP_base;
+            if(strcmp(objeto_usado.efecto, "Cura_Vida")==0){ //Se valida si el objeto tiene el efecto de curar
+                (*estado).jugador.HP += objeto_usado.valor; // Se suma a la vida del jugador
+                if((*estado).jugador.HP > (*estado).HP_base){ //Si la vida que se sumó es mayor a la vida maxima se setea a la vida maxima y se indica que se curó en su totalidad
+                    (*estado).jugador.HP = (*estado).HP_base; 
                     printf("Has consumido tu %s, Tu salud se ha restaurado\n", objeto_usado.nombre);
                 } else {
                     printf("Has consumido tu %s, Te has curado parcialmente\n", objeto_usado.nombre);
                 }
-            }else if (strcmp(objeto_usado.efecto, "Buff_Dano")==0){
-                (*estado).jugador.ataque += objeto_usado.valor;
+            }else if (strcmp(objeto_usado.efecto, "Buff_Dano")==0){ //Se valida si el objeto tiene el efecto de subir el ataque
+                (*estado).jugador.ataque += objeto_usado.valor; //Se suma el valor de objeto al campo de ataque del jugador
                 printf("Has consumido tu %s, La furia recorre tus venas y tu ataque aumenta\n", objeto_usado.nombre);
-            }else if (strcmp(objeto_usado.efecto, "Buff_Defensa")==0){
-                (*estado).jugador.defensa += objeto_usado.valor;
+            }else if (strcmp(objeto_usado.efecto, "Buff_Defensa")==0){ //Se valida si el objeto tiene el efecto de subir la defensa
+                (*estado).jugador.defensa += objeto_usado.valor; //Se suma el valor de objeto al campo de defensa del jugador
                 printf("Has consumido tu %s, tu cuerpo se fortalece y tus músculos endurecen, tu defensa ha aumentado\n", objeto_usado.nombre);
-            } else {
-                (*estado).HP_base += objeto_usado.valor;
+            } else { //Al no tener ninguno de los efectos anteriores se asume que tiene el efecto de aumentar la vida maxima
+                (*estado).HP_base += objeto_usado.valor; //Se aumenta el campo de vida maxima del jugador
                 printf("Has consumido tu %s, las capacidades de tu cuerpo han sido potenciadas, tu vida máxima ha aumentado\n", objeto_usado.nombre);
             }
 
-            (*estado).objetos_consumidos++;
+            (*estado).objetos_consumidos++; //Contador para la estadistica final de objetos 
             
-            for(i=indice;i<(*estado).items_en_mochila-1;i++){
+            for(i=indice;i<(*estado).items_en_mochila-1;i++){ //Algoritmo de eliminacion de la casilla usada
                 (*estado).mochila[i]=(*estado).mochila[i+1];
             }
-            (*estado).items_en_mochila--;
+            (*estado).items_en_mochila--; //Se ajustan los objetos totales a la cantidad tras usar uno
         }
     }
 }
 
-void esperar_segundos(int segundos){
+void esperar_segundos(int segundos){ //Procedimiento para contar una cantidad de segundos antes de seguir con el programa
     clock_t inicio=clock(), milisegundos=segundos*1000;
 
     while((clock()-inicio)*1000/CLOCKS_PER_SEC<milisegundos){
@@ -314,15 +320,15 @@ void esperar_segundos(int segundos){
     }
 }
 
-void registrarHighscore(EstadoJuego estado, T_bool victoria){
+void registrarHighscore(EstadoJuego estado, T_bool victoria){ //Procedimiento para guardar los datos de una partida terminada en el archivo de highscores
     char nombre_jugador[50];
-    int puntaje_final=estado.jugador.XP, bonus=rand()%60, penalización=rand()%50;
+    int puntaje_final=estado.jugador.XP*estado.jugador.nivel, bonus=rand()%60, penalización=rand()%50;
 
-    printf("\n=========================\n");
+    printf("\n========================================================================================\n");
 
-    if(victoria==V){
-        puntaje_final=puntaje_final+bonus;
-        printf("Considerate maestro de la mazmorra, pues tus hazañas han demostrado ser insuperables a lo largo de tu travesia\n");
+    if(victoria==V){ //Valida si culminó la partida porque ganó el juego
+        puntaje_final=puntaje_final+bonus; //Funcion para el puntaje
+        printf("Considerate maestro de la mazmorra, pues tus logros han demostrado ser insuperables a lo largo de tu travesia\n");
     }else{
         int base_derrota=estado.pisos_base/4;
         puntaje_final=(base_derrota+bonus-penalización);
@@ -343,7 +349,7 @@ void registrarHighscore(EstadoJuego estado, T_bool victoria){
     printf("Enemigos derrotados %d\n", estado.enemigos_derrotados);
     printf("Objetos consumidos %d\n", estado.objetos_consumidos);
     printf("Atributos finales: HP %d | Ataque %d | Defensa %d | XP %d \n", estado.jugador.HP, estado.jugador.ataque, estado.jugador.defensa, estado.jugador.XP);
-
+    printf("\n========================================================================================\n");
     FILE *arch_h=fopen("highscore.txt","a");
     if(arch_h==NULL){
         printf("Error al abrir el archivo highscore, verifique la existencia y el formato del nisno y vuelva a intentarlo\n");
@@ -365,7 +371,7 @@ void iniciarCombate(EstadoJuego *estado, Entidad *enemigo){
         
         printf("Tu: HP %d | Ataque %d | Defensa %d|\n", (*estado).jugador.HP, (*estado).jugador.ataque,(*estado).jugador.defensa);
         printf("%s: HP %d | Ataque %d | Defensa %d|\n", (*enemigo).nombre, (*enemigo).vida, (*enemigo).dano, (*enemigo).defensa);
-        printf("\nTurno del jugador: Atacar(1) | Revisar la mochila(2) | Intentar huir(3)|\n");
+        printf("\nTurno del jugador: Atacar(1) | Revisar la mochila(2) | Intentar huir(3)|\n\n");
         scanf("%d", &opcion_com);
 
         
@@ -374,7 +380,7 @@ void iniciarCombate(EstadoJuego *estado, Entidad *enemigo){
                 int dano_jugador=calcularDano((*estado).jugador.ataque, (*enemigo).defensa);
                 (*enemigo).vida-=dano_jugador;
 
-                printf("\n %s recibe %d de dano!\n", (*enemigo).nombre, dano_jugador);
+                printf("\n%s recibe %d de dano!\n", (*enemigo).nombre, dano_jugador);
 
                 turno_consumido=V;
                 break;
@@ -441,19 +447,19 @@ void otorgarRecompensa(EstadoJuego *estado, Objetos catalogo[], int total_objeto
 
     if(strcmp(tipo_enemigo, "raro")==0){
         entregar_objeto=1;
-        printf("\nentre los restos del enemigo encuentras un objeto\n");
+        printf("\nEntre los restos del enemigo encuentras un objeto\n");
     }else{
         if((rand()%100)<40){
             entregar_objeto=1;
-            printf("\nentre los destrozos de la pelea encuentras un objeto\n");
+            printf("\nEntre los destrozos de la pelea encuentras un objeto\n");
         }else{
-        printf("entre los escombros de la batalla no hay más que polvo\n");
+        printf("Entre los escombros de la batalla no hay mas que polvo, no has encontrado nada util\n");
         }
     }
 
     if(entregar_objeto==1 && total_objetos>0){
         if((*estado).items_en_mochila>= (*estado).n_mochila || (*estado).items_en_mochila>=100){
-            printf("\nla mochila se encuentra llena\n ");
+            printf("\nLa mochila se encuentra llena\n ");
             return;
         }
     }
@@ -494,7 +500,7 @@ void Pelea_final(EstadoJuego *estado){
     if((*estado).jugador.HP <= 0){
         printf("\nEl vigor del veterano morado es mayor que tu voluntad, has sido derrotado...\ny contigo, se van todas las esperanzas de salvar al mundo de Sir Violeta\n");
     } else {
-        printf("\nRecorres el último cuarto de la mazmorra mientras el ambiente, antes lleno de criaturas hostiles y monstruosas, vuelve a su fin, tu alma se siente en paz mientras te adentras en las cavernas que yacen bajo este calabozo infernal\n");
+        printf("\nRecorres el ultimo cuarto de la mazmorra mientras el ambiente, antes lleno de criaturas hostiles y monstruosas...\nVuelve a su fin, tu alma se siente en paz mientras te adentras en las cavernas que yacen bajo este calabozo infernal\n");
         printf("Has derrotado a Sir Violeta y puedes sentir el porvenir de un Mundo de paz sin ese manto violeta cubriendo su hermosa luz...\n");
     }
 }
@@ -506,11 +512,11 @@ void avanzarCuarto(EstadoJuego *estado, Entidad bestiario[], int total_enemigos,
         (*estado).cuartos_explorados = 1;
         (*estado).piso_maximo++;
         es_cuarto_final=1;
-        printf("Desciendes en un nuevo piso de la mazmorra oscura, húmeda y putrefacta\n");
+        printf("Desciendes en un nuevo piso de la mazmorra oscura, humeda y putrefacta\n");
     }else if(piso_actual == (*estado).piso_maximo && (cuarto_actual == (*estado).cuartos_base)) {
         (*estado).cuartos_explorados++;
         es_cuarto_jefe=1;
-        printf("Has ingresado al último cuarto de este piso, prepárate para el desafío que se presenta frente a tus ojos\n");
+        printf("Has ingresado al ultimo cuarto de la mazmorra, preparate para el desafío que se presenta frente a tus ojos\n");
     } else {
         (*estado).cuartos_explorados++;
         printf("Avanzas por el piso hacia el proximo cuarto");
@@ -526,6 +532,7 @@ void avanzarCuarto(EstadoJuego *estado, Entidad bestiario[], int total_enemigos,
         printf("\nAparece una gran llama violeta que se disipa para mostrar a la maldad personificada en un gran caballero de armadura del mismo color del fuego\n");
         Pelea_final(estado);
         if((*estado).jugador.HP>0){
+            BorrarPartidaGuardada();
             registrarHighscore((*estado),V);
             return;
         }
@@ -556,20 +563,27 @@ void MostrarHighscores(){
         printf("Error al abrir el archivo highscore, verifique la existencia y el formato del nisno y vuelva a intentarlo\n");
         return;
     } else {
+        printf("\n================================================================================================================================\n");
         for (i=0; i<5; i++){
             fscanf(arch_h,"%s %d %d %d %d %d %s\n", nombre_jugador, &puntaje, &piso_maximo, &cuartos_explorados, &enemigos_derrotados, &objetos_consumidos, resultado);
-            printf("%s | Puntaje:%d | Piso maximo:%d | Cuarto alcanzado:%d | Enemigos derrotados:%d | Objetos consumidos:%d | Resultado:%s\n", nombre_jugador, puntaje, piso_maximo, cuartos_explorados, enemigos_derrotados, objetos_consumidos, resultado);
+            printf("\n%s | Puntaje:%d | Piso maximo:%d | Cuarto alcanzado:%d | Enemigos derrotados:%d | Objetos consumidos:%d | Resultado:%s\n", nombre_jugador, puntaje, piso_maximo, cuartos_explorados, enemigos_derrotados, objetos_consumidos, resultado);
         }
+        printf("\n================================================================================================================================\n");
     }
 
     fclose(arch_h);
 }
 
-void guardarPartida(EstadoJuego estado){
-   // atributos, nivel actual, experiencia, piso, cuarto e inventario
+void BorrarPartidaGuardada(){
     FILE *arch_save;
     arch_save = fopen("partida_guardada.txt", "w");
     fclose(arch_save);
+}
+
+void guardarPartida(EstadoJuego estado){
+   // atributos, nivel actual, experiencia, piso, cuarto e inventario
+    FILE *arch_save;
+    BorrarPartidaGuardada();
 
     arch_save = fopen("partida_guardada.txt", "w");
     fprintf(arch_save, "%d %d %d %d %d %d %d %d %d %d %d", estado.cuartos_explorados, estado.piso_maximo, estado.enemigos_derrotados, estado.objetos_consumidos, estado.jugador.HP, estado.HP_base, estado.jugador.defensa, estado.jugador.ataque, estado.jugador.nivel, estado.jugador.XP, estado.items_en_mochila);
